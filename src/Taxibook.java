@@ -1,5 +1,8 @@
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import javax.net.ssl.*;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -24,7 +27,13 @@ public class Taxibook {
         Taxibook parser = new Taxibook();
         String responce = parser.simplePostRequest("http://api.poputka.ua/MobileService.svc/getservicesbycitywithfilter/");
         System.out.println("end");
+        AllTaxi rubricList = parser.getResponce();
+        System.out.println(rubricList);
+
     }
+
+
+
 
     public String simplePostRequest(String url) {
         StringBuffer response = new StringBuffer();
@@ -114,6 +123,12 @@ public class Taxibook {
         //print result
         //        System.out.println(response.toString());
         return response.toString();
+    }
+
+    public AllTaxi parseAllTaxi(String text) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        AllTaxi parsedSite = mapper.readValue(text, AllTaxi.class);
+        return parsedSite;
 
 
     }
