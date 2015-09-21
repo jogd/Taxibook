@@ -17,7 +17,7 @@ public class Taxibook {
 
 
     //Delimiter used in CSV file
-    private static final String COMMA_DELIMITER = ";";
+    private static final String COMMA_DELIMITER = "; ";
     private static final String NEW_LINE_SEPARATOR = "\n";
     private final String USER_AGENT = "Mozilla/5.0";
 
@@ -79,7 +79,7 @@ public class Taxibook {
         StringBuffer phoneResult = new StringBuffer();
         for (String phone : phones) {
             phoneResult.append(phone);
-            phoneResult.append(" ,");
+            phoneResult.append(", ");
         }
         phoneResult.delete(phoneResult.length()-2, phoneResult.length());
         printTextValue(fileWriter, phoneResult.toString());
