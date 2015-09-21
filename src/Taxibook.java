@@ -90,7 +90,8 @@ public class Taxibook {
         try {
 
 
-            String postData = "{\"serviceid\":2837}";
+
+            String postData = "{\"serviceid\":"+serviceId+"}";
             byte[] postDataBytes = postData.toString().getBytes("UTF-8");
             URL obj = new URL(url);
             HttpURLConnection con = (HttpURLConnection) obj.openConnection();
