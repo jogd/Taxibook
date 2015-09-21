@@ -27,7 +27,7 @@ public class Taxibook {
         Taxibook parser = new Taxibook();
         String responce = parser.simplePostRequest("http://api.poputka.ua/MobileService.svc/getservicesbycitywithfilter/");
         System.out.println("end");
-        AllTaxi rubricList = parser.getResponce();
+        AllTaxi rubricList = parser.parseAllTaxi(responce);
         System.out.println(rubricList);
 
     }

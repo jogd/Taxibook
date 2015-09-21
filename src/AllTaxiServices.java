@@ -1,3 +1,5 @@
+import java.util.List;
+
 /**
  * Created by Katerina on 9/20/15.
  */
@@ -54,11 +56,11 @@ public class AllTaxiServices {
         this.nightseatprice = nightseatprice;
     }
 
-    public AllTaxiServicesPhones getPhones() {
+    public List<String> getPhones() {
         return phones;
     }
 
-    public void setPhones(AllTaxiServicesPhones phones) {
+    public void setPhones(List<String> phones) {
         this.phones = phones;
     }
 
@@ -122,7 +124,7 @@ public class AllTaxiServices {
     String iosapp;
     String nightrate;
     String nightseatprice;
-    AllTaxiServicesPhones phones;
+    List<String> phones;
     String priority;
     String rate;
     String rating;
