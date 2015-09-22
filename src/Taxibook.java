@@ -15,7 +15,6 @@ import java.util.List;
 public class Taxibook {
 
 
-
     //Delimiter used in CSV file
     private static final String COMMA_DELIMITER = "; ";
     private static final String NEW_LINE_SEPARATOR = "\n";
@@ -26,10 +25,18 @@ public class Taxibook {
         String responce = parser.allTaxiPostRequest("http://api.poputka.ua/MobileService.svc/getservicesbycitywithfilter/");
         AllTaxi allTaxi = parser.parseAllTaxi(responce);
         FileWriter serviceWriter = new FileWriter("allTaxi.csv");
+        FileWriter additionalServiceWriter = new FileWriter("additionalService.csv", true);
+        int counter = 0;
         for (AllTaxiServices service : allTaxi.getServices()) {
             parser.writeTaxis(serviceWriter, service);
             String serviceResponce = parser.servicePostRequest("http://api.poputka.ua/MobileService.svc/getservicedetails/", service.getServiceid());
+            AboutOneTaxi parsedService = parser.parseOneService(serviceResponce);
+            parser.writeAdditionalServices(additionalServiceWriter, parsedService);
+            counter++;
+            System.out.println(counter + " of additional services of " + allTaxi.getServices().size() + " are parsed");
         }
+        additionalServiceWriter.flush();
+        additionalServiceWriter.close();
         serviceWriter.flush();
         serviceWriter.close();
         System.out.println(allTaxi);
@@ -37,36 +44,78 @@ public class Taxibook {
     }
 
 
-    public void writeTaxis(FileWriter serviceWriter, AllTaxiServices service){
+    public void writeTaxis(FileWriter serviceWriter, AllTaxiServices service) {
         try {
-                printTextValue(serviceWriter, service.getAndroidapp());
-                printTextValue(serviceWriter, service.getCommentscount());
-                printTextValue(serviceWriter, service.getHasonlineorder());
-                printTextValue(serviceWriter, service.getIosapp());
-                printTextValue(serviceWriter, service.getNightrate());
-                printTextValue(serviceWriter, service.getNightseatprice());
-                printTextValue(serviceWriter, service.getPriority());
-                printTextValue(serviceWriter, service.getRate());
-                printTextValue(serviceWriter, service.getRating());
-                printTextValue(serviceWriter, service.getSeatprice());
-                printTextValue(serviceWriter, service.getServiceid());
-                printTextValue(serviceWriter, service.getServicename());
-                printTextValue(serviceWriter, service.getServicetypeid());
-                printPhoneValues(serviceWriter, service.getPhones());
-                serviceWriter.append(NEW_LINE_SEPARATOR);
+            printTextValue(serviceWriter, service.getAndroidapp());
+            printTextValue(serviceWriter, service.getCommentscount());
+            printTextValue(serviceWriter, service.getHasonlineorder());
+            printTextValue(serviceWriter, service.getIosapp());
+            printTextValue(serviceWriter, service.getNightrate());
+            printTextValue(serviceWriter, service.getNightseatprice());
+            printTextValue(serviceWriter, service.getPriority());
+            printTextValue(serviceWriter, service.getRate());
+            printTextValue(serviceWriter, service.getRating());
+            printTextValue(serviceWriter, service.getSeatprice());
+            printTextValue(serviceWriter, service.getServiceid());
+            printTextValue(serviceWriter, service.getServicename());
+            printTextValue(serviceWriter, service.getServicetypeid());
+            printListValues(serviceWriter, service.getPhones());
+            serviceWriter.append(NEW_LINE_SEPARATOR);
         } catch (IOException e) {
             System.out.println("Error in CsvFileWriter !!!");
             e.printStackTrace();
         }
     }
 
-    public void printTextValue(FileWriter fileWriter, String value){
+    public void writeAdditionalServices(FileWriter writer, AboutOneTaxi oneTaxi) {
+        try {
+            printTextValue(writer, oneTaxi.getServiceid());
+            printTextValue(writer, oneTaxi.getServicetypeid());
+            printTextValue(writer, oneTaxi.getServicename());
+            printListValues(writer, oneTaxi.getPhones());
+            printListValues(writer, oneTaxi.getWorkingcities());
+            printTextValue(writer, oneTaxi.getAdditional_services());
+            printTextValue(writer, oneTaxi.getRating());
+            printTextValue(writer, oneTaxi.getAdditional_services());
+            printTextValue(writer, oneTaxi.getAndroidapp());
+            printTextValue(writer, oneTaxi.getCar_park());
+            printTextValue(writer, oneTaxi.getCommentscount());
+            printTextValue(writer, oneTaxi.getDaymindistance());
+            printTextValue(writer, oneTaxi.getDayoutcityrate());
+            printTextValue(writer, oneTaxi.getDayrate());
+            printTextValue(writer, oneTaxi.getDayseatprice());
+            printTextValue(writer, oneTaxi.getDescription());
+            printTextValue(writer, oneTaxi.getEmail());
+            printTextValue(writer, oneTaxi.getErrorcode());
+            printTextValue(writer, oneTaxi.getFeatures());
+            printTextValue(writer, oneTaxi.getFullday());
+            printTextValue(writer, oneTaxi.getHasonlineorder());
+            printTextValue(writer, oneTaxi.getIntercity());
+            printTextValue(writer, oneTaxi.getInternational());
+            printTextValue(writer, oneTaxi.getIosapp());
+            printTextValue(writer, oneTaxi.getNightmindistance());
+            printTextValue(writer, oneTaxi.getNightoutcityrate());
+            printTextValue(writer, oneTaxi.getNightrate());
+            printTextValue(writer, oneTaxi.getNightseatprice());
+            printTextValue(writer, oneTaxi.getPayment_methods());
+            printTextValue(writer, oneTaxi.getPreliminary());
+            printTextValue(writer, oneTaxi.getWebsite());
+            printTextValue(writer, oneTaxi.getWeekends());
+            printListValues(writer, oneTaxi.getWorkingcities());
+
+            writer.append(NEW_LINE_SEPARATOR);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void printTextValue(FileWriter fileWriter, String value) {
         try {
             String printValue = null;
-            if (value == null || value.equals("")){
+            if (value == null || value.equals("")) {
                 printValue = "\"\"";
-            }else {
-                printValue = "\""+value+"\"";
+            } else {
+                printValue = "\"" + value + "\"";
             }
             fileWriter.append(printValue);
             fileWriter.append(COMMA_DELIMITER);
@@ -75,23 +124,22 @@ public class Taxibook {
         }
     }
 
-    public void printPhoneValues(FileWriter fileWriter, List<String> phones){
+    public void printListValues(FileWriter fileWriter, List<String> phones) {
         StringBuffer phoneResult = new StringBuffer();
         for (String phone : phones) {
             phoneResult.append(phone);
             phoneResult.append(", ");
         }
-        phoneResult.delete(phoneResult.length()-2, phoneResult.length());
+        phoneResult.delete(phoneResult.length() - 2, phoneResult.length());
         printTextValue(fileWriter, phoneResult.toString());
     }
 
-    public String servicePostRequest(String url, String serviceId){
+    public String servicePostRequest(String url, String serviceId) {
         StringBuffer response = new StringBuffer();
         try {
 
 
-
-            String postData = "{\"serviceid\":"+serviceId+"}";
+            String postData = "{\"serviceid\":" + serviceId + "}";
             byte[] postDataBytes = postData.toString().getBytes("UTF-8");
             URL obj = new URL(url);
             HttpURLConnection con = (HttpURLConnection) obj.openConnection();
@@ -220,6 +268,12 @@ public class Taxibook {
         return parsedSite;
 
 
+    }
+
+    public AboutOneTaxi parseOneService(String text) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        AboutOneTaxi parsedService = mapper.readValue(text, AboutOneTaxi.class);
+        return parsedService;
     }
 
     private static class DefaultTrustManager implements X509TrustManager {
