@@ -16,36 +16,44 @@ public class Taxibook {
 
 
     //Delimiter used in CSV file
-    private static final String COMMA_DELIMITER = "; ";
+    private static final String COMMA_DELIMITER = ";";
     private static final String NEW_LINE_SEPARATOR = "\n";
     private final String USER_AGENT = "Mozilla/5.0";
 
     public static void main(String[] args) throws Exception {
         Taxibook parser = new Taxibook();
-        String responce = parser.allTaxiPostRequest("http://api.poputka.ua/MobileService.svc/getservicesbycitywithfilter/");
-        AllTaxi allTaxi = parser.parseAllTaxi(responce);
-        FileWriter serviceWriter = new FileWriter("allTaxi.csv");
+        String townsResponce = parser.allTowns("http://api.poputka.ua/MobileService.svc/getcities/");
+        Towns towns=parser.parseTowns(townsResponce);
+        FileWriter writeTowns = new FileWriter("allTowns.csv");
+        FileWriter serviceWriter = new FileWriter("allTaxi.csv", true);
         FileWriter additionalServiceWriter = new FileWriter("additionalService.csv", true);
-        int counter = 0;
-        for (AllTaxiServices service : allTaxi.getServices()) {
-            parser.writeTaxis(serviceWriter, service);
-            String serviceResponce = parser.servicePostRequest("http://api.poputka.ua/MobileService.svc/getservicedetails/", service.getServiceid());
-            AboutOneTaxi parsedService = parser.parseOneService(serviceResponce);
-            parser.writeAdditionalServices(additionalServiceWriter, parsedService);
-            counter++;
-            System.out.println(counter + " of additional services of " + allTaxi.getServices().size() + " are parsed");
+        parser.writeTowns(writeTowns, towns);
+        writeTowns.flush();
+        writeTowns.close();
+        for (CitiesTown oneCity : towns.getCities()) {
+            String responce = parser.allTaxiPostRequest("http://api.poputka.ua/MobileService.svc/getservicesbycitywithfilter/", oneCity.getCityid());
+            AllTaxi allTaxi = parser.parseAllTaxi(responce);
+            int counter = 0;
+            for (AllTaxiServices service : allTaxi.getServices()) {
+                parser.writeTaxis(serviceWriter, service, oneCity.getCityid());
+                String serviceResponce = parser.servicePostRequest("http://api.poputka.ua/MobileService.svc/getservicedetails/", service.getServiceid());
+                AboutOneTaxi parsedService = parser.parseOneService(serviceResponce);
+                parser.writeAdditionalServices(additionalServiceWriter, parsedService);
+                counter++;
+                System.out.println(counter + " of additional services of " + allTaxi.getServices().size() + " are parsed");
+            }
         }
         additionalServiceWriter.flush();
         additionalServiceWriter.close();
         serviceWriter.flush();
         serviceWriter.close();
-        System.out.println(allTaxi);
 
     }
 
 
-    public void writeTaxis(FileWriter serviceWriter, AllTaxiServices service) {
+    public void writeTaxis(FileWriter serviceWriter, AllTaxiServices service, String id) {
         try {
+            printTextValue(serviceWriter, id);
             printTextValue(serviceWriter, service.getAndroidapp());
             printTextValue(serviceWriter, service.getCommentscount());
             printTextValue(serviceWriter, service.getHasonlineorder());
@@ -65,6 +73,26 @@ public class Taxibook {
             System.out.println("Error in CsvFileWriter !!!");
             e.printStackTrace();
         }
+    }
+
+
+    public void writeTowns(FileWriter serviceWriter, Towns towns) {
+        for (CitiesTown town: towns.getCities()) {
+            try {
+                printTextValue(serviceWriter, town.getCityid());
+                printTextValue(serviceWriter, town.getCityname());
+                printTextValue(serviceWriter, town.getLatitude());
+                printTextValue(serviceWriter, town.getLongitude());
+                printTextValue(serviceWriter, town.getPriority());
+                printTextValue(serviceWriter, town.getTrans());
+                printTextValue(serviceWriter, town.getPriority());
+                serviceWriter.append(NEW_LINE_SEPARATOR);
+            } catch (IOException e) {
+                System.out.println("Error in CsvFileWriter !!!");
+                e.printStackTrace();
+            }
+        }
+
     }
 
     public void writeAdditionalServices(FileWriter writer, AboutOneTaxi oneTaxi) {
@@ -113,9 +141,9 @@ public class Taxibook {
         try {
             String printValue = null;
             if (value == null || value.equals("")) {
-                printValue = "\"\"";
+                printValue = "{{";
             } else {
-                printValue = "\"" + value + "\"";
+                printValue = "{" + value + "{";
             }
             fileWriter.append(printValue);
             fileWriter.append(COMMA_DELIMITER);
@@ -172,12 +200,12 @@ public class Taxibook {
         return response.toString();
     }
 
-    public String allTaxiPostRequest(String url) {
+    public String allTaxiPostRequest(String url, String cityId) {
         StringBuffer response = new StringBuffer();
         try {
 
 
-            String postData = "{\"skip\":0,\"pagesize\":900,\"servicetypeid\":1,\"cityid\":0}";
+            String postData = "{\"skip\":0,\"pagesize\":900,\"servicetypeid\":1,\"cityid\":"+cityId+"}";
             byte[] postDataBytes = postData.toString().getBytes("UTF-8");
             URL obj = new URL(url);
             HttpURLConnection con = (HttpURLConnection) obj.openConnection();
@@ -210,6 +238,44 @@ public class Taxibook {
         return response.toString();
     }
 
+
+    public String allTowns(String url) {
+        StringBuffer response = new StringBuffer();
+        try {
+
+
+            String postData = "{}";
+            byte[] postDataBytes = postData.toString().getBytes("UTF-8");
+            URL obj = new URL(url);
+            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+            con.setRequestMethod("POST");
+            //add request header
+            con.setRequestProperty("User-Agent", USER_AGENT);
+            con.setRequestProperty("Content-Type", "application/json");
+            con.setRequestProperty("Content-Length", String.valueOf(postDataBytes.length));
+
+            con.setDoOutput(true);
+            con.getOutputStream().write(postDataBytes);
+
+            int responseCode = con.getResponseCode();
+            System.out.println("\nSending taxi 'POST' request to URL : " + url);
+            System.out.println("Response Code : " + responseCode);
+
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(con.getInputStream()));
+            String inputLine;
+
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+        } catch (Exception e) {
+            System.out.println("BAD REQUEST to " + url);
+            e.printStackTrace();
+            return null;
+        }
+        return response.toString();
+    }
 
     public String postRequest(String url) {
         // configure the SSLContext with a TrustManager
@@ -266,6 +332,12 @@ public class Taxibook {
         ObjectMapper mapper = new ObjectMapper();
         AllTaxi parsedSite = mapper.readValue(text, AllTaxi.class);
         return parsedSite;
+    }
+
+    public Towns parseTowns(String text) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        Towns parsedTowns = mapper.readValue(text, Towns.class);
+        return parsedTowns;
 
 
     }
